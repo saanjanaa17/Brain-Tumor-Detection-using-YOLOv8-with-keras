@@ -314,17 +314,17 @@ Future improvements could include:
 * Exploring advanced techniques like attention mechanisms.
 
 ### 10. Installation
-To run the project, ensure you have the following dependencies installed:
+* To run the project, ensure you have the following dependencies installed:
 
 ```bash
 pip install tensorflow keras-cv opencv-python matplotlib numpy pandas tqdm
 ```
 
 ### 11. References
-YOLOv8: YOLOv8 documentation and research paper.
-TensorFlow: Official TensorFlow documentation for model training and building.
-Keras CV: Keras CV documentation for computer vision utilities and tools.
-Medical Image Datasets: Brain tumor detection datasets for research, such as those used in this project.
+* YOLOv8: YOLOv8 documentation and research paper.
+* TensorFlow: Official TensorFlow documentation for model training and building.
+* Keras CV: Keras CV documentation for computer vision utilities and tools.
+* Medical Image Datasets: Brain tumor detection datasets for research, such as those used in this project.
 ```css
 
 This `README.md` is now a comprehensive guide that includes all the project details, explanations, and code for setting up and running the brain tumor detection using YOLOv8.
