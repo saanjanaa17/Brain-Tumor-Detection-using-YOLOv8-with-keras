@@ -1,5 +1,17 @@
 # Brain Tumor Detection Using YOLOv8
 
+## Table of Contents
+- Dataset
+- Data Preprocessing
+- Model Architecture
+- Training Process
+- Results and Evaluation
+- Test Predictions and Visualization
+- Conclusion
+- Future Work
+- Installation
+- References
+
 ## 1. Introduction
 
 Brain tumor detection is a critical task in the field of medical imaging, as it plays a significant role in early diagnosis and treatment. Traditionally, radiologists manually analyze medical images such as MRI scans to detect and diagnose tumors, which can be time-consuming and error-prone. The advancement of machine learning, particularly deep learning models like YOLO (You Only Look Once), offers the potential to automate this process with high accuracy and efficiency.
@@ -39,15 +51,51 @@ Where:
 
 3.1 Image Preprocessing
 ```python
-# code for image resizing and normalization
-import cv2
-import numpy as np
+# A function for converting txt file to list
+def parse_txt_annot(img_path, txt_path):
+    img = cv2.imread(img_path)
+    w = int(img.shape[0])
+    h = int(img.shape[1])
 
-def preprocess_image(image_path):
-    image = cv2.imread(image_path)  # Load the image
-    image = cv2.resize(image, (640, 640))  # Resize to 640x640
-    image = image / 255.0  # Normalize the image
-    return image
+    file_label = open(txt_path, "r")
+    lines = file_label.read().split('\n')
+
+    boxes = []
+    classes = []
+
+    if lines[0] == '':
+        return img_path, classes, boxes
+    else:
+        for i in range(0, int(len(lines))):
+            objbud = lines[i].split(' ')
+            class_ = int(objbud[0])
+
+            x1 = float(objbud[1])
+            y1 = float(objbud[2])
+            w1 = float(objbud[3])
+            h1 = float(objbud[4])
+
+            xmin = int((x1 * w) - (w1 * w) / 2.0)
+            ymin = int((y1 * h) - (h1 * h) / 2.0)
+            xmax = int((x1 * w) + (w1 * w) / 2.0)
+            ymax = int((y1 * h) + (h1 * h) / 2.0)
+
+            boxes.append([xmin, ymin, xmax, ymax])
+            classes.append(class_)
+
+    return img_path, classes, boxes
+
+
+# A function for creating file paths list
+def create_paths_list(path):
+    full_path = []
+    images = sorted(os.listdir(path))
+
+    for i in images:
+        full_path.append(os.path.join(path, i))
+
+    return full_path
+
 ```
 3.2 Bounding Box Conversion
 * The bounding box annotations were provided in a normalized format (x_center, y_center, width, height).
@@ -65,12 +113,41 @@ def convert_bbox(x_center, y_center, width, height, image_width, image_height):
 
 3.3 Dataset Preparation
 ```python
-import tensorflow as tf
+class_ids = ['label0', 'label1', 'label2']
+class_mapping = dict(zip(range(len(class_ids)), class_ids))
 
-def create_tf_dataset(image_paths, annotations):
-    # Create a TensorFlow dataset with image paths and annotation files
-    dataset = tf.data.Dataset.from_tensor_slices((image_paths, annotations))
-    return dataset
+# A function for creating a dict format of files
+def creating_files(img_files_paths, annot_files_paths):
+
+    img_files = create_paths_list(img_files_paths)
+    annot_files = create_paths_list(annot_files_paths)
+
+    image_paths = []
+    bbox = []
+    classes = []
+
+    for i in range(0, len(img_files)):
+        image_path_, classes_, bbox_ = parse_txt_annot(img_files[i], annot_files[i])
+        image_paths.append(image_path_)
+        bbox.append(bbox_)
+        classes.append(classes_)
+
+    image_paths = tf.ragged.constant(image_paths)
+    bbox = tf.ragged.constant(bbox)
+    classes = tf.ragged.constant(classes)
+
+    return image_paths, classes, bbox
+
+# Applying functions
+train_img_paths, train_classes, train_bboxes = creating_files('/kaggle/input/medical-image-dataset-brain-tumor-detection/BrainTumorYolov8/train/images',
+                                                              '/kaggle/input/medical-image-dataset-brain-tumor-detection/BrainTumorYolov8/train/labels')
+
+valid_img_paths, valid_classes, valid_bboxes = creating_files('/kaggle/input/medical-image-dataset-brain-tumor-detection/BrainTumorYolov8/valid/images',
+                                                              '/kaggle/input/medical-image-dataset-brain-tumor-detection/BrainTumorYolov8/valid/labels')
+
+test_img_paths, test_classes, test_bboxes = creating_files('/kaggle/input/medical-image-dataset-brain-tumor-detection/BrainTumorYolov8/test/images',
+                                                            '/kaggle/input/medical-image-dataset-brain-tumor-detection/BrainTumorYolov8/test/labels')
+
 ```
 
 3.4 Data Augmentation
@@ -100,7 +177,23 @@ datagen = ImageDataGenerator(
 - **FPN (Feature Pyramid Network)**: Handles objects of different sizes.
 - **Bounding Box Prediction**: Predicts bounding boxes in the xyxy format.
 - **Class Prediction**: Classifies objects into predefined categories (e.g., benign, malignant).
-  
+```python
+# Creating mirrored strategy
+stg = tf.distribute.MirroredStrategy()
+
+# Creating pre-trained model backbone with coco weights
+with stg.scope():
+    backbone = keras_cv.models.YOLOV8Backbone.from_preset("yolo_v8_xs_backbone_coco")
+    
+    YOLOV8_model = keras_cv.models.YOLOV8Detector(num_classes=len(class_mapping),
+                                              bounding_box_format="xyxy",
+                                              backbone=backbone, fpn_depth=1)
+
+    optimizer = AdamW(learning_rate=0.0001, weight_decay=0.004, global_clipnorm=GLOBAL_CLIPNORM)
+
+    YOLOV8_model.compile(optimizer=optimizer, classification_loss='binary_crossentropy', box_loss='ciou')
+```
+
 4.3 Loss Function: 
 The model uses a combination of:
 
@@ -129,7 +222,8 @@ optimizer = tf.keras.optimizers.AdamW(learning_rate=0.0001, weight_decay=0.004)
 - **Learning Rate**: 0.0001
 - **Epochs**: 120
 ```python
-history = model.fit(train_dataset, epochs=120, validation_data=val_dataset)
+# Training
+hist = YOLOV8_model.fit(train_dataset, validation_data=valid_dataset, epochs=120)
 ```
 ### 6. Results and Evaluation
 * The model's performance was evaluated based on:
@@ -138,10 +232,57 @@ history = model.fit(train_dataset, epochs=120, validation_data=val_dataset)
 - **1. Training Loss**: The training loss steadily decreased, indicating successful learning of both classification and bounding box predictions.
 - **2. Bounding Box Loss**: The box loss decreased, indicating the model’s increasing ability to predict bounding box locations accurately.
 - **3. Classification Loss**: The classification loss also decreased, showing that the model was learning to predict the correct tumor class.
+```python
+# Training Results, Evaluation
+fig, axs = plt.subplots(1, 3, figsize=(18, 5), dpi=130)
 
+axs[0].grid(linestyle="dashdot")
+axs[0].set_title("Loss")
+axs[0].plot(hist.history['loss'][1:])
+axs[0].plot(hist.history['val_loss'][1:])
+axs[0].legend(["train", "validation"])
+
+axs[1].grid(linestyle="dashdot")
+axs[1].set_title("Box Loss")
+axs[1].plot(hist.history['box_loss'])
+axs[1].plot(hist.history['val_box_loss'])
+axs[1].legend(["train", "validation"])
+
+axs[2].grid(linestyle="dashdot")
+axs[2].set_title("Class Loss")
+axs[2].plot(hist.history['class_loss'][1:])
+axs[2].plot(hist.history['val_class_loss'][1:])
+axs[2].legend(["train", "validation"])
+
+```
 ### 7. Test Predictions and Visualization
 * To evaluate the model’s performance, predictions were made on the test dataset.
+```python
+# Test Predictions
+def visualize_predict_detections(model, dataset, bounding_box_format):
+    images, y_true = next(iter(dataset.take(1)))
 
+    y_pred = model.predict(images)
+    y_pred = keras_cv.bounding_box.to_ragged(y_pred)
+
+    keras_cv.visualization.plot_bounding_box_gallery(
+        images,
+        value_range=(0, 255),
+        bounding_box_format=bounding_box_format,
+        y_true=y_true,
+        y_pred=y_pred,
+        true_color=(192, 57, 43),
+        pred_color=(255, 235, 59),
+        scale=8,
+        font_scale=0.8,
+        line_thickness=2,
+        dpi=100,
+        rows=2,
+        cols=2,
+        show=True,
+        class_mapping=class_mapping,
+    )
+```
 7.1 Visualization Results
 ```python
 import matplotlib.pyplot as plt
