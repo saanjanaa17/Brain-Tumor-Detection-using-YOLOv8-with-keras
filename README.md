@@ -34,7 +34,7 @@ Where:
 - **Test Set** : Used to evaluate the final trained model.
 * The dataset includes tumor images from different patients, ensuring the model generalizes well to unseen data.
 
-3. Data Preprocessing
+### 3. Data Preprocessing
 * Data preprocessing is crucial for preparing raw data into a format suitable for training a machine learning model. The following preprocessing steps were applied to the images and annotations:
 
 3.1 Image Preprocessing
@@ -87,7 +87,7 @@ datagen = ImageDataGenerator(
 )
 ```
 
-4. Model Architecture
+### 4. Model Architecture
 * The model used for this project is YOLOv8, a state-of-the-art object detection model optimized for real-time performance.
 
 4.1 Backbone
