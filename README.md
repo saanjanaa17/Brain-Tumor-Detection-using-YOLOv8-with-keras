@@ -12,24 +12,25 @@
 - Installation
 - References
 
-## 1. Introduction
+### 1. Introduction
 
-Brain tumor detection is a critical task in the field of medical imaging, as it plays a significant role in early diagnosis and treatment. Traditionally, radiologists manually analyze medical images such as MRI scans to detect and diagnose tumors, which can be time-consuming and error-prone. The advancement of machine learning, particularly deep learning models like YOLO (You Only Look Once), offers the potential to automate this process with high accuracy and efficiency.
+Brain tumor detection is a critical task in medical imaging, as it plays a key role in early diagnosis and treatment planning. Traditionally, radiologists manually analyze medical images, such as MRI scans, to detect and diagnose tumors, which can be time-consuming and prone to errors. Deep learning models, particularly object detection models like YOLO (You Only Look Once), offer a promising solution to automate this process with high accuracy and efficiency.
 
-In this project, we used YOLOv8, a state-of-the-art object detection model, to detect and classify brain tumors in medical images. The model was trained on a dataset of brain tumor images annotated with bounding box information and class labels, where the goal is to predict tumor locations and identify their classes (e.g., benign or malignant).
-
-This report presents a detailed explanation of the dataset, data preprocessing, model architecture, training process, and evaluation.
+In this project, we use **YOLOv8**, a state-of-the-art object detection model, to detect and classify brain tumors in MRI scans. The model is trained on a dataset containing annotated brain tumor images, where the goal is to predict tumor locations and classify them into categories such as Glioma, Meningioma, Pituitary Tumor, and No Tumor.
 
 ## 2. Dataset Description
 
-The dataset used in this project is derived from a collection of brain tumor images and their corresponding annotations. The images were collected as part of a medical image dataset for brain tumor detection.
+The dataset used in this project is the **Brain Tumor MRI dataset**, curated by Roboflow Universe. It contains 3,903 MRI images, categorized into four distinct classes:
+
+- **Glioma**: Tumors originating from glial cells in the brain.
+- **Meningioma**: Tumors arising from the meninges (protective layers surrounding the brain and spinal cord).
+- **Pituitary Tumor**: Tumors located in the pituitary gland, which affect hormonal balance.
+- **No Tumor**: MRI scans with no tumor.
 
 ### 2.1 Image Format and Annotations
-
-- **Image Dimensions**: The images in the dataset are high-resolution medical images containing brain scans. Each image is represented in JPEG format with 3 color channels (RGB).
-- **Annotation Format**: Each image has an associated annotation file in `.txt` format that specifies the bounding box coordinates for tumors within the image. The annotation is in the following format:
-
-```arduino
+- **Image Format**: High-resolution MRI images in JPEG format with RGB color channels.
+- **Annotation Format**: Each image comes with a `.txt` file that contains bounding box information in the following format:
+```plaintext
 class_id x_center y_center width height
 ```
 Where:
@@ -38,13 +39,13 @@ Where:
 * x_center, y_center: Normalized coordinates of the center of the bounding box (relative to the image width and height).
 * width, height: Normalized width and height of the bounding box (relative to the image width and height).
 
-2.2 Data Splitting
-* The dataset is split into three subsets:
+### 2.2 Data Splitting
+The dataset is split into three subsets:
 
-- **Training Set** : Used to train the model.
-- **Validation Set** : Used to validate the model’s performance during training.
-- **Test Set** : Used to evaluate the final trained model.
-* The dataset includes tumor images from different patients, ensuring the model generalizes well to unseen data.
+- Training Set: 70% of the images, used for model training.
+- Validation Set: 20% of the images, used to validate model performance during training.
+- Test Set: 10% of the images, used to evaluate the final trained model.
+The dataset includes tumor images from different patients, ensuring that the model generalizes well to unseen data.
 
 ### 3. Data Preprocessing
 * Data preprocessing is crucial for preparing raw data into a format suitable for training a machine learning model. The following preprocessing steps were applied to the images and annotations:
@@ -325,7 +326,3 @@ pip install tensorflow keras-cv opencv-python matplotlib numpy pandas tqdm
 * TensorFlow: Official TensorFlow documentation for model training and building.
 * Keras CV: Keras CV documentation for computer vision utilities and tools.
 * Medical Image Datasets: Brain tumor detection datasets for research, such as those used in this project.
-```css
-
-This `README.md` is now a comprehensive guide that includes all the project details, explanations, and code for setting up and running the brain tumor detection using YOLOv8.
-```
